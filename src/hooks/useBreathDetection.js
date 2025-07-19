@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { analyzeBreathPattern } from "../utils/breathAnalysis";
 
 function useBreathDetection(microphoneStream) {
@@ -12,40 +12,82 @@ function useBreathDetection(microphoneStream) {
   const lastPhaseRef = useRef("neutral");
   const phaseTimerRef = useRef(0);
 
-  useEffect(() => {
-    if (!microphoneStream) return;
+  const determineBreathPhase = useCallback((amplitude, pattern) => {
+    const threshold = 0.1;
+    const currentTime = Date.now();
 
-    const setupAudioAnalysis = async () => {
-      try {
-        // Create audio context
-        audioContextRef.current = new (window.AudioContext ||
-          window.webkitAudioContext)();
-
-        // Create analyzer node
-        analyzerRef.current = audioContextRef.current.createAnalyser();
-        analyzerRef.current.fftSize = 2048;
-        analyzerRef.current.smoothingTimeConstant = 0.3;
-
-        // Create source from microphone stream
-        sourceRef.current =
-          audioContextRef.current.createMediaStreamSource(microphoneStream);
-        sourceRef.current.connect(analyzerRef.current);
-
-        // Start analysis loop
-        startBreathAnalysis();
-      } catch (error) {
-        console.error("Error setting up audio analysis:", error);
+    // Detect phase transitions based on amplitude changes
+    if (amplitude > threshold) {
+      if (
+        pattern.trend === "increasing" &&
+        amplitude > pattern.avgAmplitude * 1.2
+      ) {
+        if (lastPhaseRef.current !== "inhale") {
+          lastPhaseRef.current = "inhale";
+          phaseTimerRef.current = currentTime;
+        }
+        return "inhale";
+      } else if (
+        pattern.trend === "decreasing" &&
+        amplitude > pattern.avgAmplitude * 0.8
+      ) {
+        if (lastPhaseRef.current !== "exhale") {
+          lastPhaseRef.current = "exhale";
+          phaseTimerRef.current = currentTime;
+        }
+        return "exhale";
       }
-    };
+    } else {
+      // Low amplitude - likely a pause between breaths
+      if (currentTime - phaseTimerRef.current > 500) {
+        // 500ms threshold
+        lastPhaseRef.current = "pause";
+        return "pause";
+      }
+    }
 
-    setupAudioAnalysis();
+    return lastPhaseRef.current || "neutral";
+  }, []);
 
-    return () => {
-      cleanup();
-    };
-  }, [microphoneStream]);
+  const calculateRhythm = useCallback((history) => {
+    if (history.length < 20) return 0;
 
-  const startBreathAnalysis = () => {
+    // Calculate rhythm consistency over time
+    const intervals = [];
+    for (let i = 1; i < history.length; i++) {
+      intervals.push(history[i].timestamp - history[i - 1].timestamp);
+    }
+
+    const avgInterval =
+      intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+    const variance =
+      intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) /
+      intervals.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Lower standard deviation means more rhythmic breathing
+    return Math.max(0, 1 - stdDev / avgInterval);
+  }, []);
+
+  const calculateCoherence = useCallback((history) => {
+    if (history.length < 30) return 0;
+
+    // Heart Rate Variability-inspired coherence calculation
+    const amplitudes = history.map((entry) => entry.amplitude);
+
+    // Calculate how smoothly amplitude changes over time
+    let coherenceScore = 0;
+    for (let i = 1; i < amplitudes.length; i++) {
+      const change = Math.abs(amplitudes[i] - amplitudes[i - 1]);
+      coherenceScore += Math.exp(-change * 10); // Reward smooth changes
+    }
+
+    return Math.min(1, coherenceScore / amplitudes.length);
+  }, []);
+
+  const startBreathAnalysis = useCallback(() => {
+    if (!analyzerRef.current) return;
+
     const bufferLength = analyzerRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -111,84 +153,9 @@ function useBreathDetection(microphoneStream) {
     };
 
     analyze();
-  };
+  }, [determineBreathPhase, calculateRhythm, calculateCoherence]);
 
-  const determineBreathPhase = (amplitude, pattern) => {
-    const threshold = 0.1;
-    const currentTime = Date.now();
-
-    // Detect phase transitions based on amplitude changes
-    if (amplitude > threshold) {
-      if (
-        pattern.trend === "increasing" &&
-        amplitude > pattern.avgAmplitude * 1.2
-      ) {
-        if (lastPhaseRef.current !== "inhale") {
-          lastPhaseRef.current = "inhale";
-          phaseTimerRef.current = currentTime;
-        }
-        return "inhale";
-      } else if (
-        pattern.trend === "decreasing" &&
-        amplitude > pattern.avgAmplitude * 0.8
-      ) {
-        if (lastPhaseRef.current !== "exhale") {
-          lastPhaseRef.current = "exhale";
-          phaseTimerRef.current = currentTime;
-        }
-        return "exhale";
-      }
-    } else {
-      // Low amplitude - likely a pause between breaths
-      if (currentTime - phaseTimerRef.current > 500) {
-        // 500ms threshold
-        lastPhaseRef.current = "pause";
-        return "pause";
-      }
-    }
-
-    return lastPhaseRef.current || "neutral";
-  };
-
-  const calculateRhythm = (history) => {
-    if (history.length < 20) return 0;
-
-    // Calculate rhythm consistency over time
-    const intervals = [];
-    for (let i = 1; i < history.length; i++) {
-      intervals.push(history[i].timestamp - history[i - 1].timestamp);
-    }
-
-    const avgInterval =
-      intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
-    const variance =
-      intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) /
-      intervals.length;
-    const stdDev = Math.sqrt(variance);
-
-    // Lower standard deviation means more rhythmic breathing
-    return Math.max(0, 1 - stdDev / avgInterval);
-  };
-
-  const calculateCoherence = (history) => {
-    if (history.length < 30) return 0;
-
-    // Heart Rate Variability-inspired coherence calculation
-    const amplitudes = history.map((entry) => entry.amplitude);
-    const mean =
-      amplitudes.reduce((sum, val) => sum + val, 0) / amplitudes.length;
-
-    // Calculate how smoothly amplitude changes over time
-    let coherenceScore = 0;
-    for (let i = 1; i < amplitudes.length; i++) {
-      const change = Math.abs(amplitudes[i] - amplitudes[i - 1]);
-      coherenceScore += Math.exp(-change * 10); // Reward smooth changes
-    }
-
-    return Math.min(1, coherenceScore / amplitudes.length);
-  };
-
-  const cleanup = () => {
+  const cleanup = useCallback(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -200,7 +167,38 @@ function useBreathDetection(microphoneStream) {
     if (audioContextRef.current && audioContextRef.current.state !== "closed") {
       audioContextRef.current.close();
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!microphoneStream) return;
+
+    const setupAudioAnalysis = async () => {
+      try {
+        // Create audio context
+        audioContextRef.current = new (window.AudioContext ||
+          window.webkitAudioContext)();
+
+        // Create analyzer node
+        analyzerRef.current = audioContextRef.current.createAnalyser();
+        analyzerRef.current.fftSize = 2048;
+        analyzerRef.current.smoothingTimeConstant = 0.3;
+
+        // Create source from microphone stream
+        sourceRef.current =
+          audioContextRef.current.createMediaStreamSource(microphoneStream);
+        sourceRef.current.connect(analyzerRef.current);
+
+        // Start analysis loop
+        startBreathAnalysis();
+      } catch (error) {
+        console.error("Error setting up audio analysis:", error);
+      }
+    };
+
+    setupAudioAnalysis();
+
+    return cleanup;
+  }, [microphoneStream, startBreathAnalysis, cleanup]);
 
   return breathData;
 }

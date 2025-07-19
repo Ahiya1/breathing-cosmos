@@ -1,4 +1,4 @@
-// Advanced breath pattern analysis utilities
+// Beautiful breath pattern analysis utilities
 
 export function analyzeBreathPattern(history) {
   if (history.length < 10) {

@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import BreathingCosmos from "./components/BreathingCosmos";
-import BreathingButton from "./components/BreathingButton";
+import BreathingPortal from "./components/BreathingPortal";
 
 function App() {
   const [isBreathing, setIsBreathing] = useState(false);
-  const [microphonePermission, setMicrophonePermission] = useState(null);
+  const [microphoneStream, setMicrophoneStream] = useState(null);
   const [permissionError, setPermissionError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const requestMicrophone = async () => {
+  const requestMicrophone = useCallback(async () => {
     try {
+      setIsLoading(true);
+      setPermissionError(null);
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
@@ -17,71 +21,66 @@ function App() {
           sampleRate: 44100,
         },
       });
-      setMicrophonePermission(stream);
-      setPermissionError(null);
+
+      setMicrophoneStream(stream);
+      setIsLoading(false);
       return stream;
     } catch (error) {
+      setIsLoading(false);
       setPermissionError(error.message);
       console.error("Microphone access denied:", error);
       return null;
     }
-  };
+  }, []);
 
-  const startBreathing = async () => {
-    if (!microphonePermission) {
+  const startBreathing = useCallback(async () => {
+    if (!microphoneStream) {
       const stream = await requestMicrophone();
       if (!stream) return;
     }
     setIsBreathing(true);
-  };
+  }, [microphoneStream, requestMicrophone]);
 
-  const stopBreathing = () => {
+  const stopBreathing = useCallback(() => {
     setIsBreathing(false);
-    // Optional: stop microphone stream to save resources
-    if (microphonePermission) {
-      microphonePermission.getTracks().forEach((track) => track.stop());
-      setMicrophonePermission(null);
+    if (microphoneStream) {
+      microphoneStream.getTracks().forEach((track) => track.stop());
+      setMicrophoneStream(null);
     }
-  };
+  }, [microphoneStream]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (microphonePermission) {
-        microphonePermission.getTracks().forEach((track) => track.stop());
+      if (microphoneStream) {
+        microphoneStream.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [microphonePermission]);
+  }, [microphoneStream]);
+
+  // Handle escape key to exit
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Escape" && isBreathing) {
+        stopBreathing();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [isBreathing, stopBreathing]);
 
   return (
     <div className="app">
       {!isBreathing ? (
-        <div className="breathing-portal">
-          <div className="portal-content">
-            <h1 className="cosmos-title">Breathing Cosmos</h1>
-            <p className="cosmos-subtitle">
-              Digital universes born from breath
-            </p>
-
-            {permissionError && (
-              <div className="error-message">
-                Microphone access needed to detect your breath patterns
-              </div>
-            )}
-
-            <BreathingButton onClick={startBreathing} disabled={false} />
-
-            <div className="instructions">
-              <p>• Find a comfortable seated position</p>
-              <p>• Allow your breathing to be natural</p>
-              <p>• Watch consciousness emerge from breath</p>
-              <p>• When finished, simply close the app</p>
-            </div>
-          </div>
-        </div>
+        <BreathingPortal
+          onStartBreathing={startBreathing}
+          permissionError={permissionError}
+          isLoading={isLoading}
+        />
       ) : (
         <BreathingCosmos
-          microphoneStream={microphonePermission}
+          microphoneStream={microphoneStream}
           onStop={stopBreathing}
         />
       )}
