@@ -1,0 +1,432 @@
+/* Breathing Cosmos Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  font-family: "Courier New", monospace;
+  overflow: hidden;
+  cursor: none;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  color: white;
+  position: relative;
+}
+
+/* Breathing Portal (Initial Screen) */
+.breathing-portal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    #000428 0%,
+    #004e92 50%,
+    #000 100%
+  );
+}
+
+.portal-content {
+  text-align: center;
+  z-index: 10;
+}
+
+.cosmos-title {
+  font-size: 3rem;
+  font-weight: 300;
+  margin-bottom: 1rem;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 3px;
+}
+
+.cosmos-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 3rem;
+  font-weight: 300;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+/* Breathing Button */
+.breathing-button-container {
+  position: relative;
+  margin: 3rem 0;
+}
+
+.breathing-button {
+  position: relative;
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  font-family: inherit;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.breathing-button:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+.breathing-button.pulsing {
+  animation: breathePulse 4s ease-in-out infinite;
+}
+
+.button-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.breath-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.8) 0%,
+    transparent 70%
+  );
+  margin-bottom: 8px;
+  animation: breatheCircle 4s ease-in-out infinite;
+}
+
+.button-text {
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.ripple-ring {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ring-1 {
+  width: 140px;
+  height: 140px;
+  animation: ripple 6s ease-out infinite;
+}
+
+.ring-2 {
+  width: 180px;
+  height: 180px;
+  animation: ripple 6s ease-out infinite 2s;
+}
+
+.ring-3 {
+  width: 220px;
+  height: 220px;
+  animation: ripple 6s ease-out infinite 4s;
+}
+
+.instructions {
+  margin-top: 3rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.instructions p {
+  margin-bottom: 0.5rem;
+}
+
+/* Breathing Cosmos (Main Experience) */
+.breathing-cosmos {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+.cosmic-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Session UI */
+.session-ui {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.session-info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.session-time {
+  font-size: 18px;
+  margin-bottom: 5px;
+  font-weight: 300;
+}
+
+.entity-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Cosmic Meters */
+.cosmic-meters {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.meter span {
+  min-width: 80px;
+  text-align: right;
+}
+
+.meter-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+  border-radius: 2px;
+}
+
+.meter-fill.consciousness {
+  background: linear-gradient(90deg, #4a90e2, #7b68ee);
+  box-shadow: 0 0 8px rgba(123, 104, 238, 0.4);
+}
+
+.meter-fill.complexity {
+  background: linear-gradient(90deg, #ff6b9d, #c44569);
+  box-shadow: 0 0 8px rgba(255, 107, 157, 0.4);
+}
+
+.meter-fill.unity {
+  background: linear-gradient(90deg, #06ffa5, #26d0ce);
+  box-shadow: 0 0 8px rgba(6, 255, 165, 0.4);
+}
+
+/* Breath Indicator */
+.breath-indicator {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.breath-phase {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.breath-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.breath-phase.inhale .breath-circle {
+  border-color: rgba(100, 200, 255, 0.6);
+  background: radial-gradient(
+    circle,
+    rgba(100, 200, 255, 0.2) 0%,
+    transparent 70%
+  );
+}
+
+.breath-phase.exhale .breath-circle {
+  border-color: rgba(255, 200, 100, 0.6);
+  background: radial-gradient(
+    circle,
+    rgba(255, 200, 100, 0.2) 0%,
+    transparent 70%
+  );
+}
+
+.breath-phase.pause .breath-circle {
+  border-color: rgba(200, 100, 255, 0.6);
+  background: radial-gradient(
+    circle,
+    rgba(200, 100, 255, 0.2) 0%,
+    transparent 70%
+  );
+}
+
+.phase-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* End Session Button */
+.end-session {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: all;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.end-session:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Animations */
+@keyframes breathePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes breatheCircle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cosmos-title {
+    font-size: 2rem;
+  }
+
+  .cosmos-subtitle {
+    font-size: 1rem;
+  }
+
+  .breathing-button {
+    width: 100px;
+    height: 100px;
+  }
+
+  .cosmic-meters {
+    min-width: 150px;
+  }
+
+  .session-info {
+    top: 15px;
+    left: 15px;
+  }
+
+  .cosmic-meters {
+    top: 15px;
+    right: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .instructions {
+    font-size: 12px;
+    margin-top: 2rem;
+  }
+
+  .cosmic-meters {
+    display: none; /* Hide on very small screens */
+  }
+}
